@@ -1,8 +1,7 @@
-# AWS uses an S3 bucket + DynamoDB table for OpenTofu state and locking. The
-# DigitalOcean equivalent is a single Spaces bucket: it's S3-compatible, so the
+# OpenTofu state lives in a single Spaces bucket: it's S3-compatible, so the
 # OpenTofu `s3` backend can target it directly (see cluster/versions.tf), and
 # state locking is handled by the backend's native conditional-write lockfile -
-# no DynamoDB-style lock table is needed.
+# no separate lock table is needed.
 #
 # We create a separate bucket per cluster so that `tofu apply` and
 # `tofu destroy` for one cluster never touch another cluster's state.

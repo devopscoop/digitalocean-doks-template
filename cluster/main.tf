@@ -15,8 +15,8 @@ locals {
 # A dedicated VPC per cluster keeps node-to-node traffic on DigitalOcean's
 # private network and isolates clusters from each other. The IPv4 range is the
 # only network setting DOKS exposes; there is no public/private subnet split or
-# NAT gateway to manage like there is in an AWS VPC - DOKS worker nodes reach the
-# internet directly and the managed control plane lives outside the VPC.
+# NAT gateway to manage - DOKS worker nodes reach the internet directly and the
+# managed control plane lives outside the VPC.
 resource "digitalocean_vpc" "this" {
   name     = local.name
   region   = local.region
@@ -29,14 +29,13 @@ resource "digitalocean_vpc" "this" {
 
 # https://registry.terraform.io/providers/digitalocean/digitalocean/latest/docs/resources/kubernetes_cluster
 #
-# DOKS bundles a lot of what the AWS template wires up by hand:
+# DOKS provides a lot out of the box:
 #   - The control plane is fully managed (and its logs/metrics are handled by DO).
 #   - A CNI, the DigitalOcean CSI driver (block storage), and the cloud
 #     controller manager are preinstalled. A Service of type LoadBalancer
 #     provisions a DigitalOcean Load Balancer automatically, so there is no
 #     separate load-balancer-controller to install.
-#   - Block storage volumes are encrypted at rest by DigitalOcean, so there is
-#     no customer-managed KMS key to create.
+#   - Block storage volumes are encrypted at rest by DigitalOcean.
 resource "digitalocean_kubernetes_cluster" "this" {
   name     = local.name
   region   = local.region
@@ -59,8 +58,7 @@ resource "digitalocean_kubernetes_cluster" "this" {
   }
 
   # Tear down associated load balancers and volumes on `tofu destroy` so the VPC
-  # can be deleted without manual cleanup (the AWS template documents the
-  # equivalent manual S3/CloudFormation cleanup).
+  # can be deleted without manual cleanup.
   destroy_all_associated_resources = true
 
   node_pool {
@@ -68,8 +66,8 @@ resource "digitalocean_kubernetes_cluster" "this" {
     size       = var.node_size
     node_count = var.node_count
 
-    # Fixed-size pool (mirrors the AWS template's min=max=desired=3). Flip to
-    # true and set min_nodes/max_nodes to let DOKS autoscale instead.
+    # Fixed-size pool. Flip to true and set min_nodes/max_nodes to let DOKS
+    # autoscale instead.
     auto_scale = false
 
     tags = var.tags

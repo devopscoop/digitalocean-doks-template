@@ -2,21 +2,17 @@
 
 This repo can be used to build a production-ready DigitalOcean Kubernetes (DOKS) cluster. It can either be forked, or included in a monorepo à la carte with `git subtree`.
 
-## How this differs from aws-eks-template
+DigitalOcean's managed Kubernetes provides a lot out of the box, so the template stays small:
 
-This is the DigitalOcean counterpart to [aws-eks-template](../aws-eks-template). DigitalOcean's managed Kubernetes bundles a lot of what EKS makes you wire up by hand, so the template is considerably smaller:
-
-| Concern | AWS EKS template | This DOKS template |
-| --- | --- | --- |
-| State backend | S3 bucket + DynamoDB lock table | Spaces bucket (S3-compatible) with native lockfile |
-| CI/CD auth | GitHub OIDC role-to-assume (CloudFormation) | `DIGITALOCEAN_ACCESS_TOKEN` + Spaces keys as GitHub secrets |
-| Networking | VPC with public/private subnets + NAT gateway | `digitalocean_vpc` (managed control plane lives outside it) |
-| Storage CSI / snapshots | EBS/EFS CSI add-ons, KMS key, DLM snapshot policy | DigitalOcean CSI preinstalled; volumes encrypted at rest by default |
-| Load balancing | aws-load-balancer-controller + IRSA | Built-in cloud controller manager; `Service type=LoadBalancer` provisions a DO LB |
-| Workload identity | IRSA roles for cert-manager/external-dns/loki/image-reflector | No IRSA; controllers use a DO API token / Spaces keys (Kubernetes Secrets, managed in fluxcd-template) |
-| DNS | Route53 hosted zone | `digitalocean_domain` |
-| Container registry | ECR (per repo) | DOCR (account-wide - one per account) |
-| Log storage | Loki on S3 + cross-region replication | Loki on Spaces (no cross-region replication; Spaces is intra-region redundant) |
+- **State backend:** a Spaces bucket (S3-compatible) with the `s3` backend's native lockfile - no separate lock table.
+- **CI/CD auth:** `DIGITALOCEAN_ACCESS_TOKEN` + Spaces keys as GitHub secrets.
+- **Networking:** a `digitalocean_vpc` (the managed control plane lives outside it).
+- **Storage:** the DigitalOcean CSI driver is preinstalled and volumes are encrypted at rest by default.
+- **Load balancing:** the built-in cloud controller manager provisions a DO Load Balancer for any `Service type=LoadBalancer`.
+- **Workload identity:** controllers authenticate with a DO API token / Spaces keys, supplied as Kubernetes Secrets managed in fluxcd-template.
+- **DNS:** a `digitalocean_domain`.
+- **Container registry:** DOCR (account-wide - one per account).
+- **Log storage:** Loki on Spaces (no cross-region replication; Spaces is intra-region redundant).
 
 ## Prerequisites
 
@@ -85,7 +81,7 @@ export SPACES_SECRET_ACCESS_KEY='...'
 
 ### Bootstrap
 
-This creates a DigitalOcean Spaces bucket for OpenTofu's state files. State locking uses the `s3` backend's native conditional-write lockfile, so there is no separate lock table (the AWS template uses DynamoDB for this).
+This creates a DigitalOcean Spaces bucket for OpenTofu's state files. State locking uses the `s3` backend's native conditional-write lockfile, so there is no separate lock table.
 
 If you are using the subtree method, you probably already have a bucket - you can skip this section.
 
@@ -110,7 +106,7 @@ Process:
 
 ### Configure CI/CD credentials
 
-DigitalOcean has no OIDC role-assumption like AWS, so the pipeline authenticates with secrets. In your cluster's GitHub repo (Settings → Secrets and variables → Actions), create:
+The pipeline authenticates with secrets. In your cluster's GitHub repo (Settings → Secrets and variables → Actions), create:
 
 - `DIGITALOCEAN_ACCESS_TOKEN` - a DO API token (read/write).
 - `SPACES_ACCESS_KEY_ID` - your Spaces access key.

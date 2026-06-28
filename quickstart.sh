@@ -41,9 +41,9 @@ grep -rIl ${EXCLUDES} devops.coop "${SCRIPT_DIR}" | xargs perl -pi -e "s/devops.
 grep -rIl ${EXCLUDES} devopscoop "${SCRIPT_DIR}" | xargs perl -pi -e "s/devopscoop/${github_org}/g"
 grep -rIl ${EXCLUDES} nyc3 "${SCRIPT_DIR}" | xargs perl -pi -e "s/nyc3/${region}/g"
 
-# Unlike AWS (which uses an OIDC role-to-assume in the workflow), DigitalOcean
-# auth is supplied entirely through GitHub Actions secrets - DIGITALOCEAN_TOKEN
-# and the Spaces keys - so there is nothing to substitute into the workflow.
+# DigitalOcean auth is supplied entirely through GitHub Actions secrets -
+# DIGITALOCEAN_TOKEN and the Spaces keys - so there is nothing to substitute
+# into the workflow.
 
 if [[ "$method" == "subtree" ]]; then
 

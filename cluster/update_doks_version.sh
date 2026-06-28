@@ -1,8 +1,7 @@
 #!/usr/bin/env bash
 
 # Pins kubernetes_version in terraform.tfvars to the latest DOKS release.
-# DOKS has no add-ons to version (the CNI/CSI/CCM are managed by DigitalOcean),
-# so this is the DO equivalent of the AWS template's update_eks_addons.sh.
+# DOKS has no add-ons to version (the CNI/CSI/CCM are managed by DigitalOcean).
 #
 # Requires doctl, authenticated via `doctl auth init`.
 

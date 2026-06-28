@@ -38,7 +38,7 @@ variable "ha_control_plane" {
 }
 variable "enable_dns" {
   type        = bool
-  description = "Manage a DigitalOcean DNS domain for this cluster. external-dns and cert-manager (deployed via Flux) authenticate to the DO DNS API with a token rather than IRSA."
+  description = "Manage a DigitalOcean DNS domain for this cluster. external-dns and cert-manager (deployed via Flux) authenticate to the DO DNS API with a token."
 }
 variable "create_dns_zone" {
   type        = bool

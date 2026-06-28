@@ -3,8 +3,7 @@
 
 # When we create a pull request (PR) to the main branch, this workflow runs `tofu plan`, and adds the output as a comment to the PR. If the plan looks good, we merge (ie. push) the code to the main branch. On push to main, this runs a `tofu apply`.
 #
-# Authentication is via GitHub Actions secrets (DigitalOcean has no OIDC
-# role-assumption like AWS):
+# Authentication is via GitHub Actions secrets:
 #   - DIGITALOCEAN_ACCESS_TOKEN  - DO API token, for the digitalocean provider.
 #   - SPACES_ACCESS_KEY_ID       - Spaces access key, for the s3 state backend.
 #   - SPACES_SECRET_ACCESS_KEY   - Spaces secret key, for the s3 state backend.
@@ -28,7 +27,7 @@ permissions:
 env:
   # The digitalocean provider reads DIGITALOCEAN_TOKEN.
   DIGITALOCEAN_TOKEN: ${{ secrets.DIGITALOCEAN_ACCESS_TOKEN }}
-  # The s3 (Spaces) state backend reads the AWS_* names for its credentials.
+  # The s3 (Spaces) state backend reads these standard env var names for its credentials.
   AWS_ACCESS_KEY_ID: ${{ secrets.SPACES_ACCESS_KEY_ID }}
   AWS_SECRET_ACCESS_KEY: ${{ secrets.SPACES_SECRET_ACCESS_KEY }}
 jobs:

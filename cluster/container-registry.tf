@@ -1,13 +1,12 @@
-# Container registry (replaces the AWS template's image-reflector-controller.tf).
+# Container registry.
 #
-# On AWS, the Flux image-reflector-controller reads ECR tags via an IRSA role.
 # DigitalOcean's registry (DOCR) is account-wide - there is exactly one per
 # account - so it is NOT a per-cluster resource. Enable this on a single cluster
 # in the account (or manage the registry elsewhere and leave this disabled).
 #
 # Flux's image-reflector-controller and the cluster's nodes authenticate to DOCR
 # using docker credentials derived from a DigitalOcean API token (a dockerconfig
-# Secret managed in fluxcd-template), not IRSA.
+# Secret managed in fluxcd-template).
 resource "digitalocean_container_registry" "this" {
   count = var.enable_container_registry ? 1 : 0
 

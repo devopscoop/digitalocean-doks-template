@@ -9,14 +9,13 @@
 # DigitalOcean Spaces is S3-compatible, so Loki talks to it with its `s3`
 # storage backend pointed at the Spaces endpoint. Loki authenticates with Spaces
 # access keys (S3-style access_key_id / secret_access_key) supplied as a
-# Kubernetes Secret in fluxcd-template - DigitalOcean has no IRSA, so there is no
-# per-ServiceAccount IAM role to create here.
+# Kubernetes Secret in fluxcd-template; there is no per-ServiceAccount role to
+# create here.
 #
-# Note on durability: the AWS template adds cross-region S3 replication for DR.
-# Spaces has no cross-region replication feature, so that is intentionally
-# omitted; Spaces already stores multiple redundant copies within a region. For
-# cross-region DR you would replicate out-of-band (e.g. a scheduled `rclone`
-# sync to a bucket in another region).
+# Note on durability: Spaces has no cross-region replication feature, so it is
+# not configured here; Spaces already stores multiple redundant copies within a
+# region. For cross-region DR you would replicate out-of-band (e.g. a scheduled
+# `rclone` sync to a bucket in another region).
 ################################################################################
 
 locals {
