@@ -1,0 +1,135 @@
+# Based on:
+# https://github.com/opentofu/setup-opentofu
+
+# When we create a pull request (PR) to the main branch, this workflow runs `tofu plan`, and adds the output as a comment to the PR. If the plan looks good, we merge (ie. push) the code to the main branch. On push to main, this runs a `tofu apply`.
+#
+# Authentication is via GitHub Actions secrets (DigitalOcean has no OIDC
+# role-assumption like AWS):
+#   - DIGITALOCEAN_ACCESS_TOKEN  - DO API token, for the digitalocean provider.
+#   - SPACES_ACCESS_KEY_ID       - Spaces access key, for the s3 state backend.
+#   - SPACES_SECRET_ACCESS_KEY   - Spaces secret key, for the s3 state backend.
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - cluster/**
+  pull_request:
+    branches:
+      - main
+    paths:
+      - cluster/**
+defaults:
+  run:
+    working-directory: cluster
+permissions:
+  contents: read
+  pull-requests: write
+env:
+  # The digitalocean provider reads DIGITALOCEAN_TOKEN.
+  DIGITALOCEAN_TOKEN: ${{ secrets.DIGITALOCEAN_ACCESS_TOKEN }}
+  # The s3 (Spaces) state backend reads the AWS_* names for its credentials.
+  AWS_ACCESS_KEY_ID: ${{ secrets.SPACES_ACCESS_KEY_ID }}
+  AWS_SECRET_ACCESS_KEY: ${{ secrets.SPACES_SECRET_ACCESS_KEY }}
+jobs:
+  opentofu:
+    runs-on: ubuntu-latest
+    steps:
+      # persist-credentials must remain true (the default) so that tofu init can
+      # use the GitHub token to clone module sources specified as git:// URLs.
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          persist-credentials: false
+      - uses: opentofu/setup-opentofu@847eaa4afeb791b06daa46e8eafa8b1b68d7cfb4 # v2.0.1
+      # https://github.com/magnetikonline/terraform-github-action-cache-example
+      - name: Configure Terraform plugin cache
+        run: |
+          echo "TF_PLUGIN_CACHE_DIR=$HOME/.terraform.d/plugin-cache" >>"$GITHUB_ENV"
+          mkdir --parents "$HOME/.terraform.d/plugin-cache"
+      - uses: actions/cache@2c8a9bd7457de244a408f35966fab2fb45fda9c8 # v6.0.0
+        with:
+          path: |
+            ~/.terraform.d/plugin-cache
+          key: terraform-${{ runner.os }}-${{ hashFiles('**/.terraform.lock.hcl') }}
+          restore-keys: |
+            terraform-${{ runner.os }}-
+      - id: fmt
+        run: tofu fmt -recursive -check
+        continue-on-error: true
+
+      # In the template repo there is no state bucket or secrets, so we can only
+      # lint/validate without a backend. Real cluster repos run the full flow.
+      - if: github.repository == 'devopscoop/digitalocean-doks-template'
+        name: Validate (template repo, no backend)
+        run: |
+          tofu init -backend=false
+          tofu validate -no-color
+
+      - if: github.repository != 'devopscoop/digitalocean-doks-template'
+        id: init
+        run: tofu init
+      - if: github.repository != 'devopscoop/digitalocean-doks-template'
+        id: validate
+        run: tofu validate -no-color 2>&1 | tee validate-output.txt
+      - if: github.repository != 'devopscoop/digitalocean-doks-template'
+        id: plan
+        run: |
+          tofu plan -no-color -input=false -out=plan.file 2>&1 | tee plan-output.txt
+          echo "exit_code=${PIPESTATUS[0]}" >>"$GITHUB_ENV"
+        continue-on-error: true
+      - uses: actions/github-script@d746ffe35508b1917358783b479e04febd2b8f71 # v9.0.0
+        if: github.event_name == 'pull_request' && github.repository != 'devopscoop/digitalocean-doks-template'
+        env:
+          WORKSPACE: ${{ github.workspace }}
+          FMT_OUTCOME: ${{ steps.fmt.outcome }}
+          INIT_OUTCOME: ${{ steps.init.outcome }}
+          VALIDATE_OUTCOME: ${{ steps.validate.outcome }}
+          PLAN_OUTCOME: ${{ steps.plan.outcome }}
+          EXIT_CODE: ${{ env.exit_code }}
+          ACTOR: ${{ github.actor }}
+          EVENT_NAME: ${{ github.event_name }}
+          WORKFLOW_NAME: ${{ github.workflow }}
+          TF_WORKING_DIR: ${{ env.tf_actions_working_dir }}
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const fs = require('fs');
+            const path = require('path');
+            const wd = path.join(process.env.WORKSPACE, 'cluster');
+            const planOutput = fs.readFileSync(path.join(wd, 'plan-output.txt'), 'utf8');
+            const validateOutput = fs.readFileSync(path.join(wd, 'validate-output.txt'), 'utf8');
+            const planStatus = process.env.EXIT_CODE === '0' ? 'success' : 'failure';
+            const body = [
+              `#### OpenTofu Format and Style: \`${process.env.FMT_OUTCOME}\``,
+              `#### OpenTofu Initialization: \`${process.env.INIT_OUTCOME}\``,
+              `#### OpenTofu Validation: \`${process.env.VALIDATE_OUTCOME}\``,
+              "",
+              "<details><summary>Validation Output</summary>",
+              "",
+              "```",
+              validateOutput,
+              "```",
+              "",
+              "</details>",
+              "",
+              `#### OpenTofu Plan: \`${planStatus}\``,
+              "",
+              "<details><summary>Show Plan</summary>",
+              "",
+              "```",
+              "tofu",
+              planOutput,
+              "```",
+              "",
+              "</details>",
+              "",
+              `*Pusher: @${process.env.ACTOR}, Action: \`${process.env.EVENT_NAME}\`, Working Directory: \`${process.env.TF_WORKING_DIR}\`, Workflow: \`${process.env.WORKFLOW_NAME}\`*`
+            ].join('\n');
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: body
+            })
+      - if: github.ref == 'refs/heads/main' && github.repository != 'devopscoop/digitalocean-doks-template'
+        run: tofu apply -no-color -input=false plan.file
