@@ -36,6 +36,9 @@ resource "digitalocean_spaces_bucket" "loki" {
   region = var.region
   acl    = "private"
 
+  # Objects in Spaces are encrypted at rest (AES-256) automatically; there is no
+  # SSE argument on this resource. The private ACL keeps the logs confidential.
+
   # Versioning bounds the blast radius of an accidental delete/overwrite. Loki
   # rewrites and compacts objects routinely, so the lifecycle rule below expires
   # superseded (noncurrent) versions to keep storage cost in check; the current

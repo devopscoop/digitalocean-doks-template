@@ -61,3 +61,33 @@ variable "tags" {
   type        = list(string)
   description = "Tags applied to the DOKS cluster and node pool so we can tell which repo created our resources. DigitalOcean tags are flat strings, not key/value pairs."
 }
+variable "enable_monitoring_alerts" {
+  type        = bool
+  description = "Create DigitalOcean monitor alert policies on the worker nodes (CPU/memory/disk). Requires alert_email to be set."
+}
+variable "alert_email" {
+  type        = list(string)
+  description = "Email addresses that receive monitor alert notifications. Required (non-empty) when enable_monitoring_alerts is true."
+}
+variable "alert_cpu_threshold" {
+  type        = number
+  description = "Worker-node CPU utilization percent that triggers an alert when sustained over 5m."
+}
+variable "alert_memory_threshold" {
+  type        = number
+  description = "Worker-node memory utilization percent that triggers an alert when sustained over 5m."
+}
+variable "alert_disk_threshold" {
+  type        = number
+  description = "Worker-node disk utilization percent that triggers an alert when sustained over 5m."
+}
+variable "alert_slack_webhook_url" {
+  type        = string
+  default     = ""
+  description = "Optional Slack incoming-webhook URL for monitor alerts. Leave \"\" to notify by email only."
+}
+variable "alert_slack_channel" {
+  type        = string
+  default     = ""
+  description = "Slack channel for monitor alerts; used only when alert_slack_webhook_url is set."
+}

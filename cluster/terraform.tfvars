@@ -24,6 +24,16 @@ enable_container_registry = true
 
 loki_noncurrent_version_expiration_days = 30
 
+# Worker-node monitoring alerts (SOC 2 CC7.2 / availability). Set alert_email to
+# a real inbox; thresholds are sustained-over-5m percentages. Slack is optional.
+enable_monitoring_alerts = true
+alert_email              = ["alerts@devops.coop"]
+alert_cpu_threshold      = 80
+alert_memory_threshold   = 80
+alert_disk_threshold     = 85
+# alert_slack_webhook_url = "https://hooks.slack.com/services/T000/B000/XXXX"
+# alert_slack_channel     = "alerts"
+
 # Private IPv4 range for the cluster VPC.
 vpc_cidr = "10.0.0.0/16"
 
