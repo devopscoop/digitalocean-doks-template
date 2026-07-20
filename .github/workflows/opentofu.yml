@@ -73,7 +73,7 @@ jobs:
       - if: github.repository != 'devopscoop/digitalocean-doks-template'
         id: plan
         run: |
-          tofu plan -no-color -input=false -out=plan.file 2>&1 | tee plan-output.txt
+          tofu plan -concise -no-color -input=false -out=plan.file 2>&1 | tee plan-output.txt
           echo "exit_code=${PIPESTATUS[0]}" >>"$GITHUB_ENV"
         continue-on-error: true
       - uses: actions/github-script@d746ffe35508b1917358783b479e04febd2b8f71 # v9.0.0
@@ -131,4 +131,4 @@ jobs:
               body: body
             })
       - if: github.ref == 'refs/heads/main' && github.repository != 'devopscoop/digitalocean-doks-template'
-        run: tofu apply -no-color -input=false plan.file
+        run: tofu apply -concise -no-color -input=false plan.file
