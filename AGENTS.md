@@ -67,6 +67,8 @@ Three lines in this workflow are rewritten by `quickstart.sh` in subtree mode �
 - The `code-review` plugin is deliberately not used there: it reports via `ReportFindings`, which `claude-code-action` does not handle, so it costs money per PR and posts nothing.
 - `claude.yml` has `contents: write` but no Bash allowlist, so Claude pushes a branch and returns a prefilled PR link for a human — it cannot open the PR itself. Raising permissions would remove that human step.
 
+**`.github/workflows/ghaups-daily.yml`** — runs daily to pin GitHub Actions to commit SHAs (and Trivy-scan them), opening a PR via a GitHub App token.
+
 **Other:** `.github/dependabot.yml` updates the `terraform` providers (both directories) and `github-actions` weekly. `.gitlab-ci.yml` runs GitLab SAST + secret detection for mirrored/GitLab consumers. All actions are SHA-pinned with a trailing `# vX` comment — keep them that way.
 
 ## Conventions
